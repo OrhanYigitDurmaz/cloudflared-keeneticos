@@ -7,6 +7,11 @@ on:
     - cron: "0 0 * * *"
   workflow_dispatch:
 
+env:
+  REMOTE_REPO: cloudflared-official    # Directory for cloudflared checkout
+  TEMP: temp                           # Directory for local repo operations
+  VERSION_TAG: version.txt             # File to store version tag
+
 jobs:
   check-version:
     runs-on: ubuntu-latest
@@ -19,7 +24,7 @@ jobs:
         with:
           persist-credentials: false
           fetch-depth: 0
-          path: ${{ vars.TEMP }}
+          path: ${{ env.TEMP }}
           
       - name: Checkout cloudflared official repository
         uses: actions/checkout@v4
@@ -27,20 +32,20 @@ jobs:
           repository: cloudflare/cloudflared
           ref: master
           fetch-depth: 0
-          path: ${{ vars.REMOTE_REPO }}
+          path: ${{ env.REMOTE_REPO }}
           
       - name: Compare the tag version from official cloudflared repository
         id: get_version
         run: |
-          latest_tag=$(git -C ${{ vars.REMOTE_REPO }} describe --abbrev=0 --tags)
-          [ -f ${{ vars.TEMP }}/${{ vars.VERSION_TAG }} ] || touch ${{ vars.TEMP }}/${{ vars.VERSION_TAG }}
-          previous_tag=$(cat ${{ vars.TEMP }}/${{ vars.VERSION_TAG }})
+          latest_tag=$(git -C ${{ env.REMOTE_REPO }} describe --abbrev=0 --tags)
+          [ -f ${{ env.TEMP }}/${{ env.VERSION_TAG }} ] || touch ${{ env.TEMP }}/${{ env.VERSION_TAG }}
+          previous_tag=$(cat ${{ env.TEMP }}/${{ env.VERSION_TAG }})
           if [ "$latest_tag" != "$previous_tag" ]; then
             echo "latest=$latest_tag" >> $GITHUB_OUTPUT
             echo "previous=$previous_tag" >> $GITHUB_OUTPUT
-            echo "$latest_tag" > ${{ vars.TEMP }}/${{ vars.VERSION_TAG }}
+            echo "$latest_tag" > ${{ env.TEMP }}/${{ env.VERSION_TAG }}
           else
-            echo "$latest_tag" still same as before
+            echo "$latest_tag still same as before"
           fi
           
       - name: Commit & Push changes
@@ -48,7 +53,7 @@ jobs:
         uses: actions-js/push@master
         with:
           github_token: ${{ secrets.GITHUB_TOKEN }}
-          directory: ${{ vars.TEMP }}
+          directory: ${{ env.TEMP }}
           
   build:
     needs: check-version
@@ -74,7 +79,7 @@ jobs:
         env:
           CGO_ENABLED: 0
           GOOS: linux
-          GOARCH: mips
+          GOARCH: mips              # Use mips for big-endian builds
           GOMIPS: softfloat
           LDFLAGS: "-s -w -extldflags=-static"
         run: |
