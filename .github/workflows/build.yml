@@ -10,7 +10,7 @@ jobs:
       - name: Checkout cloudflared code from master
         uses: actions/checkout@v4
         with:
-          repository: cloudflare/cloudflared
+          repository: OrhanYigitDurmaz/cloudflared
           ref: master
           
       - name: Install Go
