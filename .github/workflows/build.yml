@@ -74,7 +74,7 @@ jobs:
         env:
           CGO_ENABLED: 0
           GOOS: linux
-          GOARCH: mipsle
+          GOARCH: mips
           GOMIPS: softfloat
           LDFLAGS: "-s -w -extldflags=-static"
         run: |
